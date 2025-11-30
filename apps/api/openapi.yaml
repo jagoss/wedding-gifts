@@ -1,0 +1,855 @@
+openapi: 3.1.0
+info:
+  title: Wedding Gift Registry API
+  version: 1.0.0
+  description: API para gestionar bodas, regalos y aportes con integración a Amazon, MercadoLibre y MercadoPago.
+
+servers:
+  - url: http://localhost:8080
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: RESOURCE_NOT_FOUND
+            message:
+              type: string
+              example: Gift not found
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: usr_123
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+
+    BankAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          example: ba_1
+        type:
+          type: string
+          enum: [MERCADOPAGO, BANK_ACCOUNT]
+        label:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+      required: [type, label, details]
+
+    Wedding:
+      type: object
+      properties:
+        id:
+          type: string
+          example: wed_123
+        slug:
+          type: string
+          example: juan-y-ana-2026
+        title:
+          type: string
+        date:
+          type: string
+          format: date
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        heroImageUrl:
+          type: string
+          format: uri
+          nullable: true
+        bankAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankAccount'
+
+    Gift:
+      type: object
+      properties:
+        id:
+          type: string
+          example: gift_1
+        weddingId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        estimatedPrice:
+          type: number
+          format: float
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+          example: USD
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+        productUrl:
+          type: string
+          format: uri
+          nullable: true
+        type:
+          type: string
+          enum: [PRODUCT, EXPERIENCE, FUND]
+        status:
+          type: string
+          enum: [AVAILABLE, RESERVED, PURCHASED, HIDDEN]
+        maxContributions:
+          type: integer
+          nullable: true
+
+    Contribution:
+      type: object
+      properties:
+        id:
+          type: string
+          example: contrib_123
+        weddingId:
+          type: string
+        giftId:
+          type: string
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+          format: email
+        type:
+          type: string
+          enum: [CONTRIBUTION, RESERVATION]
+        amount:
+          type: number
+          format: float
+          nullable: true
+        status:
+          type: string
+          enum: [PENDING, PAID, REJECTED]
+        paymentProvider:
+          type: string
+          enum: [MERCADOPAGO, BANK_TRANSFER]
+          nullable: true
+        paymentProviderId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductMetadata:
+      type: object
+      properties:
+        source:
+          type: string
+          enum: [AMAZON, MERCADOLIBRE]
+        productId:
+          type: string
+        title:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+        price:
+          type: number
+          format: float
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        raw:
+          type: object
+          additionalProperties: true
+
+    AuthRegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [name, email, password]
+
+    AuthLoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+
+    AuthLoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    CreateWeddingRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        date:
+          type: string
+          format: date
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        heroImageUrl:
+          type: string
+          format: uri
+          nullable: true
+        bankAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankAccount'
+      required: [title, slug]
+
+    UpdateWeddingRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        date:
+          type: string
+          format: date
+        location:
+          type: string
+        message:
+          type: string
+        heroImageUrl:
+          type: string
+          format: uri
+        bankAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankAccount'
+
+    CreateGiftRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        estimatedPrice:
+          type: number
+          format: float
+        currency:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+        productUrl:
+          type: string
+          format: uri
+        type:
+          type: string
+          enum: [PRODUCT, EXPERIENCE, FUND]
+        maxContributions:
+          type: integer
+      required: [title, type]
+
+    UpdateGiftRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        estimatedPrice:
+          type: number
+          format: float
+        currency:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+        productUrl:
+          type: string
+          format: uri
+        type:
+          type: string
+          enum: [PRODUCT, EXPERIENCE, FUND]
+        status:
+          type: string
+          enum: [AVAILABLE, RESERVED, PURCHASED, HIDDEN]
+        maxContributions:
+          type: integer
+
+    ProductMetadataRequest:
+      type: object
+      properties:
+        productUrl:
+          type: string
+          format: uri
+      required: [productUrl]
+
+    PublicContributionRequest:
+      type: object
+      properties:
+        giftId:
+          type: string
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+          format: email
+        type:
+          type: string
+          enum: [CONTRIBUTION, RESERVATION]
+        amount:
+          type: number
+          format: float
+          nullable: true
+        paymentMethod:
+          type: string
+          enum: [MERCADOPAGO, BANK_TRANSFER]
+      required: [giftId, guestName, guestEmail, type, paymentMethod]
+
+    PublicContributionResponse:
+      type: object
+      properties:
+        contributionId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, PAID, REJECTED]
+        payment:
+          type: object
+          nullable: true
+          properties:
+            provider:
+              type: string
+              enum: [MERCADOPAGO]
+            preferenceId:
+              type: string
+            checkoutUrl:
+              type: string
+              format: uri
+        bankInstructions:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    UpdateContributionStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [PENDING, PAID, REJECTED]
+      required: [status]
+
+    MpPreferenceRequest:
+      type: object
+      properties:
+        weddingId:
+          type: string
+        contributionId:
+          type: string
+      required: [weddingId, contributionId]
+
+    MpPreferenceResponse:
+      type: object
+      properties:
+        preferenceId:
+          type: string
+        checkoutUrl:
+          type: string
+          format: uri
+
+paths:
+  /auth/register:
+    post:
+      summary: Registrar usuario admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegisterRequest'
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Error de validacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      summary: Login de usuario admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginResponse'
+        '401':
+          description: Credenciales invalidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /weddings/me:
+    get:
+      summary: Listar bodas del usuario logueado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de bodas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wedding'
+        '401':
+          description: No autorizado
+
+  /weddings:
+    post:
+      summary: Crear boda
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWeddingRequest'
+      responses:
+        '201':
+          description: Boda creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wedding'
+        '400':
+          description: Error de validacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /weddings/{weddingId}:
+    get:
+      summary: Obtener detalle de boda (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalle de boda
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wedding'
+        '404':
+          description: No encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      summary: Actualizar boda
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWeddingRequest'
+      responses:
+        '200':
+          description: Boda actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wedding'
+    delete:
+      summary: Eliminar boda
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Boda eliminada
+
+  /public/weddings/{slug}:
+    get:
+      summary: Obtener datos publicos de boda (pagina de invitados)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Datos publicos de boda + regalos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wedding:
+                    $ref: '#/components/schemas/Wedding'
+                  gifts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Gift'
+        '404':
+          description: No encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /weddings/{weddingId}/gifts:
+    get:
+      summary: Listar regalos de una boda (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de regalos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gift'
+    post:
+      summary: Crear regalo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGiftRequest'
+      responses:
+        '201':
+          description: Regalo creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gift'
+
+  /weddings/{weddingId}/gifts/{giftId}:
+    get:
+      summary: Obtener regalo (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: giftId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Regalo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gift'
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      summary: Actualizar regalo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: giftId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGiftRequest'
+      responses:
+        '200':
+          description: Regalo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gift'
+    delete:
+      summary: Eliminar regalo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: giftId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Regalo eliminado
+
+  /integrations/product-metadata:
+    post:
+      summary: Obtener metadatos de producto desde Amazon / MercadoLibre
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductMetadataRequest'
+      responses:
+        '200':
+          description: Metadatos de producto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductMetadata'
+        '400':
+          description: URL invalida u origen no soportado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /public/weddings/{slug}/contributions:
+    post:
+      summary: Crear contribucion o reserva desde pagina publica
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicContributionRequest'
+      responses:
+        '201':
+          description: Contribucion creada (posible pago iniciado)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicContributionResponse'
+        '400':
+          description: Error de validacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /weddings/{weddingId}/contributions:
+    get:
+      summary: Listar contribuciones de una boda (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PENDING, PAID, REJECTED]
+        - name: giftId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de contribuciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contribution'
+
+  /weddings/{weddingId}/contributions/{contributionId}:
+    patch:
+      summary: Actualizar estado de contribucion (ej. confirmar deposito)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: contributionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateContributionStatusRequest'
+      responses:
+        '200':
+          description: Contribucion actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
+
+  /payments/mercadopago/preference:
+    post:
+      summary: Crear preferencia de pago de MercadoPago para una contribucion
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MpPreferenceRequest'
+      responses:
+        '200':
+          description: Preferencia creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpPreferenceResponse'
+
+  /webhooks/mercadopago:
+    post:
+      summary: Webhook de MercadoPago
+      description: >
+        Endpoint para recibir notificaciones de MercadoPago. Debe validar el origen
+        y actualizar el estado de las contribuciones en base al pago.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Webhook procesado
+        '400':
+          description: Webhook invalido

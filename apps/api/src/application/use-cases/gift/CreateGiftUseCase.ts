@@ -1,6 +1,8 @@
 import { Gift, GiftType } from '../../../domain/entities/Gift';
 import { Money, UniqueId } from '../../../domain/value-objects';
 import { IGiftRepository } from '../../../domain/repositories/IGiftRepository';
+import { IWeddingRepository } from '../../../domain/repositories/IWeddingRepository';
+import { EntityNotFoundError } from '../../../domain/errors/DomainError';
 import { GiftOutput } from '../../dtos/GiftDtos';
 
 /**
@@ -22,7 +24,10 @@ export interface CreateGiftInput {
  * Use case for creating a new gift in a wedding registry.
  */
 export class CreateGiftUseCase {
-  constructor(private readonly giftRepository: IGiftRepository) {}
+  constructor(
+    private readonly giftRepository: IGiftRepository,
+    private readonly weddingRepository: IWeddingRepository
+  ) {}
 
   /**
    * Creates a new gift for a wedding.
@@ -31,6 +36,12 @@ export class CreateGiftUseCase {
    */
   async execute(input: CreateGiftInput): Promise<GiftOutput> {
     const weddingId = UniqueId.fromString(input.weddingId);
+
+    // Verify wedding exists
+    const wedding = await this.weddingRepository.findById(weddingId);
+    if (!wedding) {
+      throw new EntityNotFoundError('Wedding', input.weddingId);
+    }
 
     // Build Money value object if price is provided
     const estimatedPrice =

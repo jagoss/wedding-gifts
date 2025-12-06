@@ -1,5 +1,6 @@
 import { UniqueId } from '../../../domain/value-objects';
 import { IWeddingRepository } from '../../../domain/repositories/IWeddingRepository';
+import { EntityNotFoundError } from '../../../domain/errors/DomainError';
 
 /**
  * Input DTO for deleting a wedding.
@@ -26,9 +27,9 @@ export class DeleteWeddingUseCase {
 
     const wedding = await this.weddingRepository.findById(weddingId);
 
-    // Idempotent: if wedding doesn't exist, consider it deleted
+    // Throw error if wedding doesn't exist
     if (!wedding) {
-      return;
+      throw new EntityNotFoundError('Wedding', input.weddingId);
     }
 
     // Check ownership (throws if unauthorized)

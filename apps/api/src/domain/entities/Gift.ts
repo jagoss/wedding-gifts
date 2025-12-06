@@ -220,6 +220,7 @@ export class Gift {
     imageUrl?: string | null;
     productUrl?: string | null;
     type?: GiftType;
+    status?: GiftStatus;
     maxContributions?: number | null;
   }): void {
     if (data.title !== undefined) {
@@ -242,6 +243,9 @@ export class Gift {
     }
     if (data.type !== undefined) {
       this._type = data.type;
+    }
+    if (data.status !== undefined) {
+      this._status = data.status;
     }
     if (data.maxContributions !== undefined) {
       this._maxContributions = data.maxContributions;

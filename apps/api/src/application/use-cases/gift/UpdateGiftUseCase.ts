@@ -1,4 +1,4 @@
-import { Gift, GiftType } from '../../../domain/entities/Gift';
+import { Gift, GiftType, GiftStatus } from '../../../domain/entities/Gift';
 import { Money, UniqueId } from '../../../domain/value-objects';
 import { IGiftRepository } from '../../../domain/repositories/IGiftRepository';
 import { EntityNotFoundError } from '../../../domain/errors/DomainError';
@@ -16,6 +16,7 @@ export interface UpdateGiftInput {
   imageUrl?: string | null;
   productUrl?: string | null;
   type?: GiftType;
+  status?: GiftStatus;
   maxContributions?: number | null;
 }
 
@@ -55,6 +56,7 @@ export class UpdateGiftUseCase {
       imageUrl: input.imageUrl,
       productUrl: input.productUrl,
       type: input.type,
+      status: input.status,
       maxContributions: input.maxContributions,
     });
 

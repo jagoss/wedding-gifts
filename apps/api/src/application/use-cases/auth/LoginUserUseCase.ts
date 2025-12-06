@@ -2,7 +2,7 @@ import { Email } from '../../../domain/value-objects/Email';
 import { IUserRepository } from '../../../domain/repositories/IUserRepository';
 import { IPasswordHasher } from '../../../domain/services/IPasswordHasher';
 import { ITokenService } from '../../../domain/services/ITokenService';
-import { AuthenticationError } from '../../../domain/errors/DomainError';
+import { AuthenticationError, ValidationError } from '../../../domain/errors/DomainError';
 
 /**
  * Input DTO for user login.
@@ -42,6 +42,11 @@ export class LoginUserUseCase {
    * @throws AuthenticationError if credentials are invalid.
    */
   async execute(input: LoginUserInput): Promise<LoginUserOutput> {
+    // Validate password
+    if (!input.password || input.password.trim() === '') {
+      throw new ValidationError('Password is required');
+    }
+
     const email = Email.create(input.email);
 
     // Find user by email

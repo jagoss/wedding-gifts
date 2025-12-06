@@ -2,7 +2,7 @@ import { User } from '../../../domain/entities/User';
 import { Email } from '../../../domain/value-objects/Email';
 import { IUserRepository } from '../../../domain/repositories/IUserRepository';
 import { IPasswordHasher } from '../../../domain/services/IPasswordHasher';
-import { ConflictError } from '../../../domain/errors/DomainError';
+import { ConflictError, ValidationError } from '../../../domain/errors/DomainError';
 
 /**
  * Input DTO for user registration.
@@ -39,6 +39,11 @@ export class RegisterUserUseCase {
    * @throws ConflictError if email is already registered.
    */
   async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
+    // Validate password
+    if (!input.password || input.password.trim() === '') {
+      throw new ValidationError('Password is required');
+    }
+
     const email = Email.create(input.email);
 
     // Check if user already exists

@@ -60,9 +60,11 @@ export class CreateContributionUseCase {
     }
 
     // Build amount if provided
+    // Default to gift currency or USD if not specified
+    const currency = input.currency || gift.estimatedPrice?.currency || 'USD';
     const amount =
-      input.amount !== null && input.amount !== undefined && input.currency
-        ? Money.create(input.amount, input.currency)
+      input.amount !== null && input.amount !== undefined
+        ? Money.create(input.amount, currency)
         : null;
 
     // Create contribution entity

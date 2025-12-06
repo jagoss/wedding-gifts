@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CreatePaymentPreferenceUseCase } from '../../../application/use-cases/payment/CreatePaymentPreferenceUseCase';
 import { HandlePaymentWebhookUseCase } from '../../../application/use-cases/payment/HandlePaymentWebhookUseCase';
 import { handleHttpError } from '../errorHandler';
+import { ValidationError } from '../../../domain/errors/DomainError';
 
 /**
  * HTTP Controller for payment endpoints.
@@ -20,6 +21,15 @@ export class PaymentController {
   createPreference = async (req: Request, res: Response): Promise<void> => {
     try {
       const { weddingId, contributionId } = req.body;
+
+      // Validate required fields
+      if (!weddingId) {
+        throw new ValidationError('Wedding ID is required');
+      }
+      if (!contributionId) {
+        throw new ValidationError('Contribution ID is required');
+      }
+
       const result = await this.createPaymentPreferenceUseCase.execute({
         contributionId,
         weddingId,
@@ -39,9 +49,13 @@ export class PaymentController {
       await this.handlePaymentWebhookUseCase.execute(req.body);
       res.status(200).send();
     } catch (error) {
-      // Always return 200 for webhooks to prevent retries
-      console.error('[Webhook] Error processing:', error);
-      res.status(200).send();
+      // Handle validation errors with 400, but other errors with 200 to prevent retries
+      if (error instanceof Error && error.name === 'ValidationError') {
+        handleHttpError(res, error);
+      } else {
+        console.error('[Webhook] Error processing:', error);
+        res.status(200).send();
+      }
     }
   };
 }

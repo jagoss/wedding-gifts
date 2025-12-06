@@ -6,7 +6,7 @@ A modern TypeScript monorepo for managing wedding registries, guest contribution
 
 The backend follows Clean Architecture with clear separation of concerns:
 
-```
+```txt
 apps/api/src/
 ├── domain/                 # Enterprise Business Rules
 │   ├── entities/           # User, Wedding, Gift, Contribution
@@ -43,7 +43,7 @@ apps/api/src/
 
 ## Project Structure
 
-```
+```txt
 wedding-gifts/
 ├── apps/
 │   ├── api/                # Backend API (Express + Clean Architecture)
@@ -66,6 +66,85 @@ npm run dev
 # Run tests
 npm test
 ```
+
+## Testing the API
+
+The project includes a comprehensive HTTP test file with all endpoints documented: [`apps/api/api-tests.http`](apps/api/api-tests.http)
+
+### Prerequisites
+
+Install a REST Client extension for your IDE:
+
+- **VS Code**: [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) by Huachao Mao
+- **JetBrains IDEs** (IntelliJ, WebStorm): Built-in HTTP Client
+
+### How to Use
+
+1. **Start the API server**:
+
+   ```bash
+   cd apps/api
+   npm run dev
+   ```
+
+2. **Open the test file**: `apps/api/api-tests.http`
+
+3. **Run requests sequentially**:
+   - Click "Send Request" above any `###` request separator
+   - Start with authentication endpoints to get an access token
+   - Update variables (`@accessToken`, `@weddingId`, etc.) after successful requests
+
+4. **Test workflow example**:
+
+   ```txt
+   1. Register User → Copy user details
+   2. Login → Copy accessToken and update @accessToken variable
+   3. Create Wedding → Copy wedding id and update @weddingId variable
+   4. Create Gift → Copy gift id and update @giftId variable
+   5. Create Public Contribution → Copy contribution id
+   6. Test other endpoints with the created resources
+   ```
+
+### What's Included
+
+The test file covers **75+ test scenarios** including:
+
+- ✅ Success cases for all endpoints
+- ❌ Error scenarios (400, 401, 403, 404, 409)
+- 🔒 Authentication and authorization tests
+- 📝 Validation error tests
+- 💳 Payment integration tests (MercadoPago webhooks)
+
+Each request includes:
+
+- Clear documentation of what it tests
+- Expected HTTP status codes
+- Example request bodies
+- Comments explaining the scenario
+
+### Automated Testing (Run All Tests)
+
+To run all API tests sequentially in one command:
+
+```bash
+cd apps/api
+node run-api-tests.js
+```
+
+This automated script will:
+
+- ✅ Execute all endpoints in the correct order
+- 🔄 Automatically extract and reuse tokens/IDs from responses
+- 📊 Display colored pass/fail results for each test
+- 📈 Show a comprehensive test summary with pass rate
+- ⚡ Complete in seconds
+
+**Benefits**:
+
+- No manual intervention needed
+- Perfect for CI/CD pipelines
+- Quick validation after code changes
+- Comprehensive coverage report
 
 ## API Endpoints
 

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CreateContributionUseCase } from '../../../application/use-cases/contribution/CreateContributionUseCase';
 import { GetWeddingContributionsUseCase } from '../../../application/use-cases/contribution/GetWeddingContributionsUseCase';
 import { handleHttpError } from '../errorHandler';
+import { ValidationError } from '../../../domain/errors/DomainError';
 
 /**
  * HTTP Controller for contribution endpoints.
@@ -20,6 +21,25 @@ export class ContributionController {
   createPublicContribution = async (req: Request, res: Response): Promise<void> => {
     try {
       const { slug } = req.params;
+      const { giftId, guestName, guestEmail, type, paymentMethod } = req.body;
+
+      // Validate required fields
+      if (!giftId) {
+        throw new ValidationError('Gift ID is required');
+      }
+      if (!guestName || guestName.trim() === '') {
+        throw new ValidationError('Guest name is required');
+      }
+      if (!guestEmail) {
+        throw new ValidationError('Guest email is required');
+      }
+      if (!type) {
+        throw new ValidationError('Contribution type is required');
+      }
+      if (!paymentMethod) {
+        throw new ValidationError('Payment method is required');
+      }
+
       const result = await this.createContributionUseCase.execute({
         weddingSlug: slug,
         ...req.body,

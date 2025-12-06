@@ -1,0 +1,885 @@
+###############################################################################
+# Wedding Gift Registry API - Comprehensive Test Suite
+# 
+# This file contains HTTP requests for testing all API endpoints
+# Compatible with VS Code REST Client, JetBrains HTTP Client, etc.
+#
+# Instructions:
+# 1. Start the API server: cd apps/api && npm run dev
+# 2. Run requests sequentially to test the full flow
+# 3. Update variables (like @accessToken, @weddingId) after successful requests
+###############################################################################
+
+### Variables
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+# These will be populated as you execute requests
+@accessToken = your-token-here
+@weddingId = 1
+@giftId = 123
+@contributionId = 456
+@weddingSlug = juan-y-evy-2026
+
+
+###############################################################################
+# AUTHENTICATION ENDPOINTS
+###############################################################################
+
+### Register User - Success (201)
+# Creates a new user account
+# Expected: 201 Created with user object
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Juan Perez",
+  "email": "juan.perez@example.com",
+  "password": "SecurePassword123!"
+}
+
+### Register User - Validation Error (400)
+# Missing required fields
+# Expected: 400 Bad Request
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Juan Perez"
+}
+
+### Register User - Invalid Email Format (400)
+# Invalid email format
+# Expected: 400 Bad Request
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Juan Perez",
+  "email": "invalid-email",
+  "password": "SecurePassword123!"
+}
+
+### Register User - Duplicate Email (409)
+# Attempting to register with existing email
+# Expected: 409 Conflict
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Juan Perez",
+  "email": "juan.perez@example.com",
+  "password": "AnotherPassword456!"
+}
+
+### Login - Success (200)
+# Authenticate existing user
+# Expected: 200 OK with accessToken
+# NOTE: Copy the accessToken from response and update @accessToken variable
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "juan.perez@example.com",
+  "password": "SecurePassword123!"
+}
+
+### Login - Invalid Credentials (401)
+# Wrong password
+# Expected: 401 Unauthorized
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "juan.perez@example.com",
+  "password": "WrongPassword"
+}
+
+### Login - Non-existent User (401)
+# User doesn't exist
+# Expected: 401 Unauthorized
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "nonexistent@example.com",
+  "password": "SomePassword123"
+}
+
+### Login - Missing Required Fields (400)
+# Missing password
+# Expected: 400 Bad Request
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "juan.perez@example.com"
+}
+
+
+###############################################################################
+# WEDDING MANAGEMENT (AUTHENTICATED)
+###############################################################################
+
+### Get User Weddings - Success (200)
+# List all weddings for authenticated user
+# Expected: 200 OK with array of weddings
+GET {{baseUrl}}/weddings/me
+Authorization: Bearer {{accessToken}}
+
+### Get User Weddings - Unauthorized (401)
+# Missing authentication token
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/weddings/me
+
+### Get User Weddings - Invalid Token (401)
+# Invalid authentication token
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/weddings/me
+Authorization: Bearer invalid-token-12345
+
+### Create Wedding - Success (201)
+# Create a new wedding
+# Expected: 201 Created with wedding object
+# NOTE: Copy the wedding id from response and update @weddingId variable
+POST {{baseUrl}}/weddings
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Boda de Juan y Ana",
+  "slug": "juan-y-ana-2026",
+  "date": "2026-06-15",
+  "location": "Jardín Botánico, Buenos Aires",
+  "message": "¡Nos casamos! Queremos compartir este día especial con ustedes.",
+  "heroImageUrl": "https://example.com/images/hero.jpg",
+  "bankAccounts": [
+    {
+      "type": "MERCADOPAGO",
+      "label": "MercadoPago - Juan Perez",
+      "details": {
+        "alias": "juan.perez.mp"
+      }
+    },
+    {
+      "type": "BANK_ACCOUNT",
+      "label": "Banco Galicia",
+      "details": {
+        "cbu": "0070999830000012345678",
+        "alias": "BODA.JUAN.ANA"
+      }
+    }
+  ]
+}
+
+### Create Wedding - Minimal Required Fields (201)
+# Create wedding with only required fields
+# Expected: 201 Created
+POST {{baseUrl}}/weddings
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Boda Simple",
+  "slug": "boda-simple-2026"
+}
+
+### Create Wedding - Validation Error (400)
+# Missing required fields (title, slug)
+# Expected: 400 Bad Request
+POST {{baseUrl}}/weddings
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "date": "2026-06-15"
+}
+
+### Create Wedding - Duplicate Slug (409)
+# Slug already exists
+# Expected: 409 Conflict
+POST {{baseUrl}}/weddings
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Otra Boda",
+  "slug": "juan-y-ana-2026"
+}
+
+### Create Wedding - Unauthorized (401)
+# No authentication token
+# Expected: 401 Unauthorized
+POST {{baseUrl}}/weddings
+Content-Type: {{contentType}}
+
+{
+  "title": "Boda sin auth",
+  "slug": "boda-sin-auth"
+}
+
+### Get Wedding Details - Success (200)
+# Get specific wedding details
+# Expected: 200 OK with wedding object
+GET {{baseUrl}}/weddings/{{weddingId}}
+Authorization: Bearer {{accessToken}}
+
+### Get Wedding Details - Not Found (404)
+# Non-existent wedding ID
+# Expected: 404 Not Found
+GET {{baseUrl}}/weddings/wed_nonexistent
+Authorization: Bearer {{accessToken}}
+
+### Get Wedding Details - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/weddings/{{weddingId}}
+
+### Update Wedding - Success (200)
+# Update wedding information
+# Expected: 200 OK with updated wedding
+PATCH {{baseUrl}}/weddings/{{weddingId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Boda de Juan y Ana (Actualizada)",
+  "location": "Salón La Elegancia, CABA",
+  "message": "¡Nos casamos! Celebremos juntos este momento tan especial."
+}
+
+### Update Wedding - Partial Update (200)
+# Update only specific fields
+# Expected: 200 OK
+PATCH {{baseUrl}}/weddings/{{weddingId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "heroImageUrl": "https://example.com/images/new-hero.jpg"
+}
+
+### Update Wedding - Not Found (404)
+# Update non-existent wedding
+# Expected: 404 Not Found
+PATCH {{baseUrl}}/weddings/wed_nonexistent
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Updated Title"
+}
+
+### Update Wedding - Validation Error (400)
+# Invalid data format
+# Expected: 400 Bad Request
+PATCH {{baseUrl}}/weddings/{{weddingId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "date": "invalid-date-format"
+}
+
+### Update Wedding - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+PATCH {{baseUrl}}/weddings/{{weddingId}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Trying to update without auth"
+}
+
+### Delete Wedding - Success (204)
+# WARNING: This will delete the wedding
+# Expected: 204 No Content
+# DELETE {{baseUrl}}/weddings/{{weddingId}}
+# Authorization: Bearer {{accessToken}}
+
+### Delete Wedding - Not Found (404)
+# Delete non-existent wedding
+# Expected: 404 Not Found
+DELETE {{baseUrl}}/weddings/wed_nonexistent
+Authorization: Bearer {{accessToken}}
+
+### Delete Wedding - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+DELETE {{baseUrl}}/weddings/{{weddingId}}
+
+
+###############################################################################
+# PUBLIC WEDDING ACCESS
+###############################################################################
+
+### Get Public Wedding - Success (200)
+# Access public wedding page by slug
+# Expected: 200 OK with wedding and gifts data
+GET {{baseUrl}}/public/weddings/{{weddingSlug}}
+
+### Get Public Wedding - Not Found (404)
+# Non-existent slug
+# Expected: 404 Not Found
+GET {{baseUrl}}/public/weddings/non-existent-slug
+
+
+###############################################################################
+# GIFT MANAGEMENT (AUTHENTICATED)
+###############################################################################
+
+### Get Wedding Gifts - Success (200)
+# List all gifts for a wedding
+# Expected: 200 OK with array of gifts
+GET {{baseUrl}}/weddings/{{weddingId}}/gifts
+Authorization: Bearer {{accessToken}}
+
+### Get Wedding Gifts - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/weddings/{{weddingId}}/gifts
+
+### Create Gift - Product Type (201)
+# Create a product gift with full details
+# Expected: 201 Created with gift object
+# NOTE: Copy the gift id from response and update @giftId variable
+POST {{baseUrl}}/weddings/{{weddingId}}/gifts
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Cafetera Express Italiana",
+  "description": "Cafetera de acero inoxidable para 6 tazas",
+  "estimatedPrice": 15000,
+  "currency": "ARS",
+  "imageUrl": "https://example.com/images/cafetera.jpg",
+  "productUrl": "https://www.mercadolibre.com.ar/cafetera-express",
+  "type": "PRODUCT",
+  "maxContributions": 1
+}
+
+### Create Gift - Experience Type (201)
+# Create an experience gift
+# Expected: 201 Created
+POST {{baseUrl}}/weddings/{{weddingId}}/gifts
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Luna de Miel en Bariloche",
+  "description": "5 noches en hotel boutique con desayuno incluido",
+  "estimatedPrice": 250000,
+  "currency": "ARS",
+  "imageUrl": "https://example.com/images/bariloche.jpg",
+  "type": "EXPERIENCE"
+}
+
+### Create Gift - Fund Type (201)
+# Create a fund that accepts multiple contributions
+# Expected: 201 Created
+POST {{baseUrl}}/weddings/{{weddingId}}/gifts
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Fondo para el hogar",
+  "description": "Aportes para amueblar nuestro nuevo hogar",
+  "type": "FUND"
+}
+
+### Create Gift - Minimal Required (201)
+# Create gift with only required fields
+# Expected: 201 Created
+POST {{baseUrl}}/weddings/{{weddingId}}/gifts
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Regalo Sorpresa",
+  "type": "PRODUCT"
+}
+
+### Create Gift - Validation Error (400)
+# Missing required fields
+# Expected: 400 Bad Request
+POST {{baseUrl}}/weddings/{{weddingId}}/gifts
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "description": "Missing title and type"
+}
+
+### Create Gift - Invalid Type (400)
+# Invalid gift type
+# Expected: 400 Bad Request
+POST {{baseUrl}}/weddings/{{weddingId}}/gifts
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Invalid Gift",
+  "type": "INVALID_TYPE"
+}
+
+### Create Gift - Wedding Not Found (404)
+# Wedding doesn't exist
+# Expected: 404 Not Found
+POST {{baseUrl}}/weddings/wed_nonexistent/gifts
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Gift for non-existent wedding",
+  "type": "PRODUCT"
+}
+
+### Create Gift - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+POST {{baseUrl}}/weddings/{{weddingId}}/gifts
+Content-Type: {{contentType}}
+
+{
+  "title": "Unauthorized Gift",
+  "type": "PRODUCT"
+}
+
+### Get Gift Details - Success (200)
+# Get specific gift details
+# Expected: 200 OK with gift object
+GET {{baseUrl}}/weddings/{{weddingId}}/gifts/{{giftId}}
+Authorization: Bearer {{accessToken}}
+
+### Get Gift Details - Not Found (404)
+# Non-existent gift
+# Expected: 404 Not Found
+GET {{baseUrl}}/weddings/{{weddingId}}/gifts/gift_nonexistent
+Authorization: Bearer {{accessToken}}
+
+### Get Gift Details - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/weddings/{{weddingId}}/gifts/{{giftId}}
+
+### Update Gift - Success (200)
+# Update gift details
+# Expected: 200 OK with updated gift
+PATCH {{baseUrl}}/weddings/{{weddingId}}/gifts/{{giftId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Cafetera Express Italiana (Actualizada)",
+  "description": "Cafetera profesional de acero inoxidable",
+  "estimatedPrice": 18000
+}
+
+### Update Gift - Change Status (200)
+# Mark gift as reserved or purchased
+# Expected: 200 OK
+PATCH {{baseUrl}}/weddings/{{weddingId}}/gifts/{{giftId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "status": "RESERVED"
+}
+
+### Update Gift - Hide Gift (200)
+# Hide gift from public view
+# Expected: 200 OK
+PATCH {{baseUrl}}/weddings/{{weddingId}}/gifts/{{giftId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "status": "HIDDEN"
+}
+
+### Update Gift - Not Found (404)
+# Update non-existent gift
+# Expected: 404 Not Found
+PATCH {{baseUrl}}/weddings/{{weddingId}}/gifts/gift_nonexistent
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Updated Title"
+}
+
+### Update Gift - Validation Error (400)
+# Invalid status value
+# Expected: 400 Bad Request
+PATCH {{baseUrl}}/weddings/{{weddingId}}/gifts/{{giftId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "status": "INVALID_STATUS"
+}
+
+### Update Gift - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+PATCH {{baseUrl}}/weddings/{{weddingId}}/gifts/{{giftId}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Trying to update without auth"
+}
+
+### Delete Gift - Success (204)
+# WARNING: This will delete the gift
+# Expected: 204 No Content
+# DELETE {{baseUrl}}/weddings/{{weddingId}}/gifts/{{giftId}}
+# Authorization: Bearer {{accessToken}}
+
+### Delete Gift - Not Found (404)
+# Delete non-existent gift
+# Expected: 404 Not Found
+DELETE {{baseUrl}}/weddings/{{weddingId}}/gifts/gift_nonexistent
+Authorization: Bearer {{accessToken}}
+
+### Delete Gift - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+DELETE {{baseUrl}}/weddings/{{weddingId}}/gifts/{{giftId}}
+
+
+###############################################################################
+# CONTRIBUTION MANAGEMENT
+###############################################################################
+
+### Create Public Contribution - MercadoPago (201)
+# Guest creates a contribution with MercadoPago payment
+# Expected: 201 Created with contribution and payment checkout URL
+# NOTE: Copy contributionId from response
+POST {{baseUrl}}/public/weddings/{{weddingSlug}}/contributions
+Content-Type: {{contentType}}
+
+{
+  "giftId": "{{giftId}}",
+  "guestName": "María González",
+  "guestEmail": "maria.gonzalez@example.com",
+  "type": "CONTRIBUTION",
+  "amount": 5000,
+  "paymentMethod": "MERCADOPAGO"
+}
+
+### Create Public Contribution - Bank Transfer (201)
+# Guest creates a contribution with bank transfer
+# Expected: 201 Created with bank account details
+POST {{baseUrl}}/public/weddings/{{weddingSlug}}/contributions
+Content-Type: {{contentType}}
+
+{
+  "giftId": "{{giftId}}",
+  "guestName": "Carlos Rodríguez",
+  "guestEmail": "carlos.rodriguez@example.com",
+  "type": "CONTRIBUTION",
+  "amount": 10000,
+  "paymentMethod": "BANK_TRANSFER"
+}
+
+### Create Public Contribution - Reservation (201)
+# Guest reserves a gift (full purchase)
+# Expected: 201 Created
+POST {{baseUrl}}/public/weddings/{{weddingSlug}}/contributions
+Content-Type: {{contentType}}
+
+{
+  "giftId": "{{giftId}}",
+  "guestName": "Laura Martínez",
+  "guestEmail": "laura.martinez@example.com",
+  "type": "RESERVATION",
+  "paymentMethod": "MERCADOPAGO"
+}
+
+### Create Public Contribution - Validation Error (400)
+# Missing required fields
+# Expected: 400 Bad Request
+POST {{baseUrl}}/public/weddings/{{weddingSlug}}/contributions
+Content-Type: {{contentType}}
+
+{
+  "guestName": "Pedro López"
+}
+
+### Create Public Contribution - Invalid Email (400)
+# Invalid email format
+# Expected: 400 Bad Request
+POST {{baseUrl}}/public/weddings/{{weddingSlug}}/contributions
+Content-Type: {{contentType}}
+
+{
+  "giftId": "{{giftId}}",
+  "guestName": "Pedro López",
+  "guestEmail": "invalid-email",
+  "type": "CONTRIBUTION",
+  "paymentMethod": "MERCADOPAGO"
+}
+
+### Create Public Contribution - Invalid Type (400)
+# Invalid contribution type
+# Expected: 400 Bad Request
+POST {{baseUrl}}/public/weddings/{{weddingSlug}}/contributions
+Content-Type: {{contentType}}
+
+{
+  "giftId": "{{giftId}}",
+  "guestName": "Pedro López",
+  "guestEmail": "pedro.lopez@example.com",
+  "type": "INVALID_TYPE",
+  "paymentMethod": "MERCADOPAGO"
+}
+
+### Create Public Contribution - Wedding Not Found (404)
+# Non-existent wedding slug
+# Expected: 404 Not Found
+POST {{baseUrl}}/public/weddings/non-existent-slug/contributions
+Content-Type: {{contentType}}
+
+{
+  "giftId": "{{giftId}}",
+  "guestName": "María González",
+  "guestEmail": "maria.gonzalez@example.com",
+  "type": "CONTRIBUTION",
+  "amount": 5000,
+  "paymentMethod": "MERCADOPAGO"
+}
+
+### Create Public Contribution - Gift Not Found (404)
+# Non-existent gift ID
+# Expected: 404 Not Found
+POST {{baseUrl}}/public/weddings/{{weddingSlug}}/contributions
+Content-Type: {{contentType}}
+
+{
+  "giftId": "gift_nonexistent",
+  "guestName": "María González",
+  "guestEmail": "maria.gonzalez@example.com",
+  "type": "CONTRIBUTION",
+  "amount": 5000,
+  "paymentMethod": "MERCADOPAGO"
+}
+
+### Get Wedding Contributions - Success (200)
+# Admin lists all contributions for their wedding
+# Expected: 200 OK with array of contributions
+GET {{baseUrl}}/weddings/{{weddingId}}/contributions
+Authorization: Bearer {{accessToken}}
+
+### Get Wedding Contributions - Filter by Status (200)
+# Filter contributions by payment status
+# Expected: 200 OK with filtered contributions
+GET {{baseUrl}}/weddings/{{weddingId}}/contributions?status=PAID
+Authorization: Bearer {{accessToken}}
+
+### Get Wedding Contributions - Filter by Gift (200)
+# Get contributions for specific gift
+# Expected: 200 OK with filtered contributions
+GET {{baseUrl}}/weddings/{{weddingId}}/contributions?giftId={{giftId}}
+Authorization: Bearer {{accessToken}}
+
+### Get Wedding Contributions - Multiple Filters (200)
+# Combine multiple query parameters
+# Expected: 200 OK with filtered contributions
+GET {{baseUrl}}/weddings/{{weddingId}}/contributions?status=PENDING&giftId={{giftId}}
+Authorization: Bearer {{accessToken}}
+
+### Get Wedding Contributions - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/weddings/{{weddingId}}/contributions
+
+### Update Contribution Status - Mark as Paid (200)
+# Admin confirms bank transfer payment
+# Expected: 200 OK with updated contribution
+PATCH {{baseUrl}}/weddings/{{weddingId}}/contributions/{{contributionId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "status": "PAID"
+}
+
+### Update Contribution Status - Mark as Rejected (200)
+# Admin rejects a contribution
+# Expected: 200 OK with updated contribution
+PATCH {{baseUrl}}/weddings/{{weddingId}}/contributions/{{contributionId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "status": "REJECTED"
+}
+
+### Update Contribution Status - Invalid Status (400)
+# Invalid status value
+# Expected: 400 Bad Request
+PATCH {{baseUrl}}/weddings/{{weddingId}}/contributions/{{contributionId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "status": "INVALID_STATUS"
+}
+
+### Update Contribution Status - Not Found (404)
+# Non-existent contribution
+# Expected: 404 Not Found
+PATCH {{baseUrl}}/weddings/{{weddingId}}/contributions/contrib_nonexistent
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "status": "PAID"
+}
+
+### Update Contribution Status - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+PATCH {{baseUrl}}/weddings/{{weddingId}}/contributions/{{contributionId}}
+Content-Type: {{contentType}}
+
+{
+  "status": "PAID"
+}
+
+
+###############################################################################
+# PAYMENT INTEGRATION (MERCADOPAGO)
+###############################################################################
+
+### Create MercadoPago Preference - Success (200)
+# Generate payment preference for existing contribution
+# Expected: 200 OK with preferenceId and checkoutUrl
+POST {{baseUrl}}/payments/mercadopago/preference
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "weddingId": "{{weddingId}}",
+  "contributionId": "{{contributionId}}"
+}
+
+### Create MercadoPago Preference - Missing Fields (400)
+# Missing required fields
+# Expected: 400 Bad Request
+POST {{baseUrl}}/payments/mercadopago/preference
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "weddingId": "{{weddingId}}"
+}
+
+### Create MercadoPago Preference - Contribution Not Found (404)
+# Non-existent contribution
+# Expected: 404 Not Found
+POST {{baseUrl}}/payments/mercadopago/preference
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "weddingId": "{{weddingId}}",
+  "contributionId": "contrib_nonexistent"
+}
+
+### Create MercadoPago Preference - Unauthorized (401)
+# Missing authentication
+# Expected: 401 Unauthorized
+POST {{baseUrl}}/payments/mercadopago/preference
+Content-Type: {{contentType}}
+
+{
+  "weddingId": "{{weddingId}}",
+  "contributionId": "{{contributionId}}"
+}
+
+### MercadoPago Webhook - Payment Approved (200)
+# Simulates MercadoPago notification for approved payment
+# Expected: 200 OK
+POST {{baseUrl}}/webhooks/mercadopago
+Content-Type: {{contentType}}
+
+{
+  "action": "payment.created",
+  "data": {
+    "id": "12345678"
+  },
+  "type": "payment"
+}
+
+### MercadoPago Webhook - Payment Pending (200)
+# Simulates MercadoPago notification for pending payment
+# Expected: 200 OK
+POST {{baseUrl}}/webhooks/mercadopago
+Content-Type: {{contentType}}
+
+{
+  "action": "payment.updated",
+  "data": {
+    "id": "12345679"
+  },
+  "type": "payment"
+}
+
+### MercadoPago Webhook - Payment Rejected (200)
+# Simulates MercadoPago notification for rejected payment
+# Expected: 200 OK
+POST {{baseUrl}}/webhooks/mercadopago
+Content-Type: {{contentType}}
+
+{
+  "action": "payment.updated",
+  "data": {
+    "id": "12345680"
+  },
+  "type": "payment"
+}
+
+### MercadoPago Webhook - Invalid Payload (400)
+# Missing required webhook data
+# Expected: 400 Bad Request
+POST {{baseUrl}}/webhooks/mercadopago
+Content-Type: {{contentType}}
+
+{
+  "type": "payment"
+}
+
+### MercadoPago Webhook - Malformed JSON (400)
+# Invalid JSON format
+# Expected: 400 Bad Request
+POST {{baseUrl}}/webhooks/mercadopago
+Content-Type: {{contentType}}
+
+{
+  "action": "payment.created",
+  "data":
+
+
+###############################################################################
+# END OF TEST SUITE
+###############################################################################
+# 
+# Summary of HTTP Status Codes Used:
+# - 200 OK: Successful GET/PATCH/POST operations
+# - 201 Created: Successful resource creation
+# - 204 No Content: Successful deletion
+# - 400 Bad Request: Validation errors, malformed requests
+# - 401 Unauthorized: Missing or invalid authentication
+# - 403 Forbidden: Insufficient permissions
+# - 404 Not Found: Resource doesn't exist
+# - 409 Conflict: Duplicate resource (e.g., slug, email)
+# - 500 Internal Server Error: Unexpected server errors
+#
+# Notes:
+# - Delete operations are commented out to prevent accidental data loss
+# - Update @accessToken, @weddingId, @giftId, etc. after creating resources
+# - Webhook endpoints typically don't require authentication
+# - All error responses follow the format: {"error": {"message": "..."}}
+###############################################################################
+

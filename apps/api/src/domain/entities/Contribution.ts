@@ -224,9 +224,14 @@ export class Contribution {
    * Marks the contribution as rejected.
    */
   reject(): void {
+    if (this._status === ContributionStatus.PAID) {
+      return; // Preserve successful payments from downgrading
+    }
+
     if (this._status === ContributionStatus.REJECTED) {
       return; // Idempotent
     }
+
     this._status = ContributionStatus.REJECTED;
   }
 

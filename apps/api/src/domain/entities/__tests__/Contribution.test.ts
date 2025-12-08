@@ -248,6 +248,28 @@ describe('Contribution', () => {
       expect(contribution.paymentProviderId).toBe('payment-first');
     });
 
+    it('should ignore reject when already paid', () => {
+      // Arrange
+      const weddingId = UniqueId.create();
+      const giftId = UniqueId.create();
+      const contribution = Contribution.create({
+        weddingId,
+        giftId,
+        guestName: 'Test Guest',
+        guestEmail: Email.create('test@example.com'),
+        type: ContributionType.CONTRIBUTION,
+        amount: Money.create(1000, 'UYU'),
+      });
+
+      // Act
+      contribution.markAsPaid('payment-123');
+      contribution.reject();
+
+      // Assert
+      expect(contribution.status).toBe(ContributionStatus.PAID);
+      expect(contribution.paymentProviderId).toBe('payment-123');
+    });
+
     it('should reject contribution', () => {
       // Arrange
       const weddingId = UniqueId.create();

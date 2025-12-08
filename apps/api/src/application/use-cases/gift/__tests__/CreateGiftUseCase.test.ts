@@ -1,7 +1,7 @@
 import { CreateGiftUseCase } from '../CreateGiftUseCase';
 import { MockGiftRepository, MockWeddingRepository } from '../../../../test-utils/MockRepositories';
 import { TestDataFactory } from '../../../../test-utils/TestDataFactory';
-import { EntityNotFoundError, ValidationError } from '../../../../domain/errors/DomainError';
+import { EntityNotFoundError, ValidationError, UnauthorizedError } from '../../../../domain/errors/DomainError';
 import { GiftType } from '../../../../domain/entities/Gift';
 
 describe('CreateGiftUseCase', () => {
@@ -22,6 +22,7 @@ describe('CreateGiftUseCase', () => {
       await weddingRepository.save(wedding);
 
       const input = {
+        userId: wedding.userId.value,
         weddingId: wedding.id.value,
         title: 'Coffee Maker',
         description: 'Italian espresso maker',
@@ -50,6 +51,7 @@ describe('CreateGiftUseCase', () => {
       await weddingRepository.save(wedding);
 
       const input = {
+        userId: wedding.userId.value,
         weddingId: wedding.id.value,
         title: 'Simple Gift',
         type: GiftType.FUND,
@@ -69,6 +71,7 @@ describe('CreateGiftUseCase', () => {
     it('should throw EntityNotFoundError when wedding does not exist', async () => {
       // Arrange
       const input = {
+        userId: 'user-nonexistent',
         weddingId: 'wed_nonexistent',
         title: 'Gift',
         type: GiftType.PRODUCT,
@@ -87,6 +90,7 @@ describe('CreateGiftUseCase', () => {
       await weddingRepository.save(wedding);
 
       const input = {
+        userId: wedding.userId.value,
         weddingId: wedding.id.value,
         title: '',
         type: GiftType.PRODUCT,
@@ -94,6 +98,23 @@ describe('CreateGiftUseCase', () => {
 
       // Act & Assert
       await expect(useCase.execute(input)).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw UnauthorizedError when user does not own wedding', async () => {
+      // Arrange
+      const wedding = TestDataFactory.createWedding();
+      await weddingRepository.save(wedding);
+
+      const input = {
+        userId: 'different-user',
+        weddingId: wedding.id.value,
+        title: 'Gift',
+        type: GiftType.PRODUCT,
+      };
+
+      // Act & Assert
+      await expect(useCase.execute(input)).rejects.toThrow(UnauthorizedError);
+      await expect(useCase.execute(input)).rejects.toThrow('You do not own this wedding');
     });
   });
 });

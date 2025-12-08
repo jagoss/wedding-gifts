@@ -107,11 +107,11 @@ export function createContainer(): Container {
   const deleteWeddingUseCase = new DeleteWeddingUseCase(weddingRepository);
 
   // Gift Use Cases
-  const createGiftUseCase = new CreateGiftUseCase(giftRepository);
+  const createGiftUseCase = new CreateGiftUseCase(giftRepository, weddingRepository);
   const getGiftUseCase = new GetGiftUseCase(giftRepository);
   const getWeddingGiftsUseCase = new GetWeddingGiftsUseCase(giftRepository);
-  const updateGiftUseCase = new UpdateGiftUseCase(giftRepository);
-  const deleteGiftUseCase = new DeleteGiftUseCase(giftRepository);
+  const updateGiftUseCase = new UpdateGiftUseCase(giftRepository, weddingRepository);
+  const deleteGiftUseCase = new DeleteGiftUseCase(giftRepository, weddingRepository);
 
   // Contribution Use Cases
   const createContributionUseCase = new CreateContributionUseCase(

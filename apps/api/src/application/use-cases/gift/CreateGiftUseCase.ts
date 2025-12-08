@@ -9,6 +9,7 @@ import { GiftOutput } from '../../dtos/GiftDtos';
  * Input DTO for creating a gift.
  */
 export interface CreateGiftInput {
+  userId: string;
   weddingId: string;
   title: string;
   type: GiftType;
@@ -36,12 +37,16 @@ export class CreateGiftUseCase {
    */
   async execute(input: CreateGiftInput): Promise<GiftOutput> {
     const weddingId = UniqueId.fromString(input.weddingId);
+    const userId = UniqueId.fromString(input.userId);
 
     // Verify wedding exists
     const wedding = await this.weddingRepository.findById(weddingId);
     if (!wedding) {
       throw new EntityNotFoundError('Wedding', input.weddingId);
     }
+
+    // Enforce ownership
+    wedding.ensureOwnedBy(userId);
 
     // Build Money value object if price is provided
     const estimatedPrice =

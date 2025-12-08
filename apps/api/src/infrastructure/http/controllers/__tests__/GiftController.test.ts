@@ -6,6 +6,7 @@ import { GetWeddingGiftsUseCase } from '../../../../application/use-cases/gift/G
 import { UpdateGiftUseCase } from '../../../../application/use-cases/gift/UpdateGiftUseCase';
 import { DeleteGiftUseCase } from '../../../../application/use-cases/gift/DeleteGiftUseCase';
 import { GiftType, GiftStatus } from '../../../../domain/entities/Gift';
+import { AuthenticatedRequest } from '../../middleware/authMiddleware';
 
 describe('GiftController', () => {
   let controller: GiftController;
@@ -14,7 +15,7 @@ describe('GiftController', () => {
   let mockGetWeddingGiftsUseCase: jest.Mocked<GetWeddingGiftsUseCase>;
   let mockUpdateUseCase: jest.Mocked<UpdateGiftUseCase>;
   let mockDeleteUseCase: jest.Mocked<DeleteGiftUseCase>;
-  let mockRequest: Partial<Request>;
+  let mockRequest: Partial<AuthenticatedRequest>;
   let mockResponse: Partial<Response>;
 
   beforeEach(() => {
@@ -38,6 +39,7 @@ describe('GiftController', () => {
     mockRequest = {
       body: {},
       params: {},
+      user: { id: 'user-1', name: 'Test', email: 't@example.com' },
     };
 
     mockResponse = {
@@ -122,10 +124,11 @@ describe('GiftController', () => {
       mockCreateUseCase.execute.mockResolvedValue(expectedResult);
 
       // Act
-      await controller.createGift(mockRequest as Request, mockResponse as Response);
+      await controller.createGift(mockRequest as AuthenticatedRequest, mockResponse as Response);
 
       // Assert
       expect(mockCreateUseCase.execute).toHaveBeenCalledWith({
+        userId: 'user-1',
         weddingId,
         ...giftData,
       });
@@ -188,10 +191,11 @@ describe('GiftController', () => {
       mockUpdateUseCase.execute.mockResolvedValue(expectedResult);
 
       // Act
-      await controller.updateGift(mockRequest as Request, mockResponse as Response);
+      await controller.updateGift(mockRequest as AuthenticatedRequest, mockResponse as Response);
 
       // Assert
       expect(mockUpdateUseCase.execute).toHaveBeenCalledWith({
+        userId: 'user-1',
         giftId,
         ...updateData,
       });
@@ -207,10 +211,10 @@ describe('GiftController', () => {
       mockDeleteUseCase.execute.mockResolvedValue(undefined);
 
       // Act
-      await controller.deleteGift(mockRequest as Request, mockResponse as Response);
+      await controller.deleteGift(mockRequest as AuthenticatedRequest, mockResponse as Response);
 
       // Assert
-      expect(mockDeleteUseCase.execute).toHaveBeenCalledWith(giftId);
+      expect(mockDeleteUseCase.execute).toHaveBeenCalledWith({ giftId, userId: 'user-1' });
       expect(mockResponse.status).toHaveBeenCalledWith(204);
       expect(mockResponse.send).toHaveBeenCalled();
     });

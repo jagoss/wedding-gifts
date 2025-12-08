@@ -5,6 +5,7 @@ import { GetWeddingGiftsUseCase } from '../../../application/use-cases/gift/GetW
 import { UpdateGiftUseCase } from '../../../application/use-cases/gift/UpdateGiftUseCase';
 import { DeleteGiftUseCase } from '../../../application/use-cases/gift/DeleteGiftUseCase';
 import { handleHttpError } from '../errorHandler';
+import { AuthenticatedRequest } from '../middleware/authMiddleware';
 
 /**
  * HTTP Controller for gift endpoints.
@@ -37,10 +38,13 @@ export class GiftController {
    * POST /weddings/:weddingId/gifts
    * Creates a new gift.
    */
-  createGift = async (req: Request, res: Response): Promise<void> => {
+  createGift = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const { weddingId } = req.params;
+      const userId = req.user?.id as string;
+
       const result = await this.createGiftUseCase.execute({
+        userId,
         weddingId,
         ...req.body,
       });
@@ -68,10 +72,12 @@ export class GiftController {
    * PATCH /weddings/:weddingId/gifts/:giftId
    * Updates a gift.
    */
-  updateGift = async (req: Request, res: Response): Promise<void> => {
+  updateGift = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const { giftId } = req.params;
+      const userId = req.user?.id as string;
       const result = await this.updateGiftUseCase.execute({
+        userId,
         giftId,
         ...req.body,
       });
@@ -85,10 +91,11 @@ export class GiftController {
    * DELETE /weddings/:weddingId/gifts/:giftId
    * Deletes a gift.
    */
-  deleteGift = async (req: Request, res: Response): Promise<void> => {
+  deleteGift = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const { giftId } = req.params;
-      await this.deleteGiftUseCase.execute(giftId);
+      const userId = req.user?.id as string;
+      await this.deleteGiftUseCase.execute({ giftId, userId });
       res.status(204).send();
     } catch (error) {
       handleHttpError(res, error);

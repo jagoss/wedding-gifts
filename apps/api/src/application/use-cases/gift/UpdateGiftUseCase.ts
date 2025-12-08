@@ -1,6 +1,7 @@
 import { Gift, GiftType, GiftStatus } from '../../../domain/entities/Gift';
 import { Money, UniqueId } from '../../../domain/value-objects';
 import { IGiftRepository } from '../../../domain/repositories/IGiftRepository';
+import { IWeddingRepository } from '../../../domain/repositories/IWeddingRepository';
 import { EntityNotFoundError } from '../../../domain/errors/DomainError';
 import { GiftOutput } from '../../dtos/GiftDtos';
 
@@ -8,6 +9,7 @@ import { GiftOutput } from '../../dtos/GiftDtos';
  * Input DTO for updating a gift.
  */
 export interface UpdateGiftInput {
+  userId: string;
   giftId: string;
   title?: string;
   description?: string | null;
@@ -24,7 +26,10 @@ export interface UpdateGiftInput {
  * Use case for updating a gift.
  */
 export class UpdateGiftUseCase {
-  constructor(private readonly giftRepository: IGiftRepository) {}
+  constructor(
+    private readonly giftRepository: IGiftRepository,
+    private readonly weddingRepository: IWeddingRepository
+  ) {}
 
   /**
    * Updates an existing gift.
@@ -34,11 +39,20 @@ export class UpdateGiftUseCase {
    */
   async execute(input: UpdateGiftInput): Promise<GiftOutput> {
     const giftId = UniqueId.fromString(input.giftId);
+    const userId = UniqueId.fromString(input.userId);
     const gift = await this.giftRepository.findById(giftId);
 
     if (!gift) {
       throw new EntityNotFoundError('Gift', input.giftId);
     }
+
+    const wedding = await this.weddingRepository.findById(gift.weddingId);
+    if (!wedding) {
+      throw new EntityNotFoundError('Wedding', gift.weddingId.value);
+    }
+
+    // Enforce ownership
+    wedding.ensureOwnedBy(userId);
 
     // Build Money if price update is provided
     let estimatedPrice: Money | null | undefined = undefined;

@@ -25,33 +25,35 @@ flowchart TB
         %% APPLICATION LAYER - Use Cases
         %% ========================================
         subgraph UseCases[Application: Use Cases]
-            subgraph AuthUC[Auth Use Cases]
+            subgraph AuthUC[Auth]
                 RegisterUC[RegisterUserUseCase]
                 LoginUC[LoginUserUseCase]
                 ValidateTokenUC[ValidateTokenUseCase]
             end
             
-            subgraph WeddingUC[Wedding Use Cases]
+            subgraph WeddingUC[Wedding]
                 CreateWeddingUC[CreateWeddingUseCase]
                 GetWeddingUC[GetWeddingUseCase]
                 GetBySlugUC[GetWeddingBySlugUseCase]
+                GetUserWeddingsUC[GetUserWeddingsUseCase]
                 UpdateWeddingUC[UpdateWeddingUseCase]
                 DeleteWeddingUC[DeleteWeddingUseCase]
             end
             
-            subgraph GiftUC[Gift Use Cases]
+            subgraph GiftUC[Gift]
                 CreateGiftUC[CreateGiftUseCase]
                 GetGiftUC[GetGiftUseCase]
+                GetWeddingGiftsUC[GetWeddingGiftsUseCase]
                 UpdateGiftUC[UpdateGiftUseCase]
                 DeleteGiftUC[DeleteGiftUseCase]
             end
             
-            subgraph ContribUC[Contribution Use Cases]
+            subgraph ContribUC[Contribution]
                 CreateContribUC[CreateContributionUseCase]
                 GetContribsUC[GetWeddingContributionsUseCase]
             end
             
-            subgraph PaymentUC[Payment Use Cases]
+            subgraph PaymentUC[Payments]
                 CreatePrefUC[CreatePaymentPreferenceUseCase]
                 HandleWebhookUC[HandlePaymentWebhookUseCase]
             end
@@ -75,14 +77,14 @@ flowchart TB
                 Slug[Slug]
             end
             
-            subgraph Ports[Repository Ports - Interfaces]
+            subgraph Ports[Repository Ports]
                 IUserRepo[IUserRepository]
                 IWeddingRepo[IWeddingRepository]
                 IGiftRepo[IGiftRepository]
                 IContribRepo[IContributionRepository]
             end
             
-            subgraph ServicePorts[Service Ports - Interfaces]
+            subgraph ServicePorts[Service Ports]
                 IEmailSvc[IEmailService]
                 IPaymentGW[IPaymentGateway]
                 IPasswordHash[IPasswordHasher]
@@ -90,22 +92,22 @@ flowchart TB
             end
             
             subgraph DomainErrors[Domain Errors]
-                DomainErr[DomainError\nValidationError\nEntityNotFoundError\n...]
+                DomainErr[DomainError\nValidationError\nEntityNotFoundError]
             end
         end
 
         %% ========================================
         %% INFRASTRUCTURE LAYER - Implementations
         %% ========================================
-        subgraph InfraImpl[Infrastructure: Adapters Implementation]
-            subgraph Persistence[Repository Implementations]
+        subgraph InfraImpl[Infrastructure: Implementations]
+            subgraph Persistence[Repositories]
                 InMemUserRepo[InMemoryUserRepository]
                 InMemWeddingRepo[InMemoryWeddingRepository]
                 InMemGiftRepo[InMemoryGiftRepository]
                 InMemContribRepo[InMemoryContributionRepository]
             end
             
-            subgraph ExternalServices[External Service Adapters]
+            subgraph ExternalServices[Service Adapters]
                 ConsoleEmail[ConsoleEmailService]
                 MockPaymentGW[MockPaymentGateway]
                 SimpleHasher[SimplePasswordHasher]
@@ -116,15 +118,15 @@ flowchart TB
         %% ========================================
         %% COMPOSITION ROOT
         %% ========================================
-        subgraph Main[Main: Composition Root]
+        subgraph Main[Composition Root]
             Container[DI Container]
             AppFactory[createApp]
+            Entry[main.ts]
         end
     end
 
     %% External Systems
     subgraph External[External Systems]
-        DB[(PostgreSQL)]
         MPago[MercadoPago API]
         MailProvider[Email Provider]
     end
@@ -148,11 +150,13 @@ flowchart TB
     WeddingCtrl --> CreateWeddingUC
     WeddingCtrl --> GetWeddingUC
     WeddingCtrl --> GetBySlugUC
+    WeddingCtrl --> GetUserWeddingsUC
     WeddingCtrl --> UpdateWeddingUC
     WeddingCtrl --> DeleteWeddingUC
     
     GiftCtrl --> CreateGiftUC
     GiftCtrl --> GetGiftUC
+    GiftCtrl --> GetWeddingGiftsUC
     GiftCtrl --> UpdateGiftUC
     GiftCtrl --> DeleteGiftUC
     
@@ -175,14 +179,17 @@ flowchart TB
     GetWeddingUC --> IWeddingRepo
     GetBySlugUC --> IWeddingRepo
     GetBySlugUC --> IGiftRepo
+    GetUserWeddingsUC --> IWeddingRepo
     
     CreateGiftUC --> IGiftRepo
+    GetWeddingGiftsUC --> IGiftRepo
     
     CreateContribUC --> IWeddingRepo
     CreateContribUC --> IGiftRepo
     CreateContribUC --> IContribRepo
     CreateContribUC --> IEmailSvc
     CreateContribUC --> IPaymentGW
+    GetContribsUC --> IContribRepo
     
     CreatePrefUC --> IContribRepo
     CreatePrefUC --> IPaymentGW
@@ -192,6 +199,7 @@ flowchart TB
 
     %% Use Cases -> Entities (business logic)
     CreateWeddingUC -.-> Wedding
+    GetWeddingUC -.-> Wedding
     CreateGiftUC -.-> Gift
     CreateContribUC -.-> Contribution
     RegisterUC -.-> User
@@ -208,10 +216,8 @@ flowchart TB
     ITokenSvc -.->|implements| MockToken
 
     %% Infrastructure -> External
-    InMemUserRepo -.->|future| DB
-    InMemWeddingRepo -.->|future| DB
-    MockPaymentGW -.->|future| MPago
-    ConsoleEmail -.->|future| MailProvider
+    MockPaymentGW -.-> MPago
+    ConsoleEmail -.-> MailProvider
 
     %% Composition Root wires everything
     Container --> AuthCtrl
@@ -220,39 +226,41 @@ flowchart TB
     Container --> ContribCtrl
     Container --> PaymentCtrl
     AppFactory --> Container
+    Entry --> AppFactory
 ```
 
 ## Estructura de directorios
 
 ```
 src/
-├── domain/                    # Enterprise Business Rules
-│   ├── entities/              # User, Wedding, Gift, Contribution
-│   ├── value-objects/         # UniqueId, Email, Money, Slug
-│   ├── repositories/          # IUserRepository, IWeddingRepository...
-│   ├── services/              # IEmailService, IPaymentGateway...
-│   └── errors/                # DomainError, ValidationError...
+├── domain/                    # Reglas de negocio (Entities, VOs, Ports, Errors)
+│   ├── entities/
+│   ├── value-objects/
+│   ├── repositories/          # IUserRepository, IWeddingRepository, IGiftRepository, IContributionRepository
+│   ├── services/              # IEmailService, IPaymentGateway, IPasswordHasher, ITokenService
+│   └── errors/
 │
-├── application/               # Application Business Rules
-│   ├── use-cases/             
-│   │   ├── auth/              # Register, Login, ValidateToken
-│   │   ├── wedding/           # Create, Get, Update, Delete
-│   │   ├── gift/              # Create, Get, Update, Delete
-│   │   ├── contribution/      # Create, GetByWedding
-│   │   └── payment/           # CreatePreference, HandleWebhook
-│   └── dtos/                  # Data Transfer Objects
+├── application/               # Casos de uso + DTOs
+│   ├── use-cases/
+│   │   ├── auth/
+│   │   ├── wedding/
+│   │   ├── gift/
+│   │   ├── contribution/
+│   │   └── payment/
+│   └── dtos/
 │
-├── infrastructure/            # Frameworks & Drivers
-│   ├── persistence/           # InMemory*Repository implementations
-│   ├── services/              # ConsoleEmail, MockPayment, etc.
-│   └── http/                  
+├── infrastructure/            # Implementaciones de puertos + HTTP
+│   ├── persistence/           # InMemory*Repository
+│   ├── services/              # ConsoleEmail, MockPaymentGateway, SimplePasswordHasher, MockTokenService
+│   └── http/
 │       ├── controllers/       # Express controllers
 │       ├── middleware/        # Auth middleware
 │       └── errorHandler.ts    # HTTP error mapping
 │
 └── main/                      # Composition Root
     ├── container.ts           # Dependency injection
-    └── app.ts                 # Express app factory
+    ├── app.ts                 # Express app factory
+    └── main.ts                # Entry point
 ```
 
 ## Principios aplicados

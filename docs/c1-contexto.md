@@ -4,28 +4,25 @@
 flowchart LR
     %% Personas
     Guest[Invitado\nPersona]
-    Couple[Pareja - Admins\nPersonas]
+    Couple[Pareja / Admin\nPersona]
 
-    %% Sistema
-    subgraph System["Wedding Gift Registry - Sistema"]
-        WebApp[Web App\nFrontend + Backend]
+    %% Sistema principal
+    subgraph WeddingApp["Wedding Gift Registry"]
+        FE[Frontend\nNext.js]
+        API[Backend API\nExpress + Clean Architecture]
     end
 
     %% Sistemas externos
-    Amazon[Amazon\nProduct Advertising API]
-    ML[MercadoLibre\nItems API]
-    MPago[MercadoPago\nPagos y Webhooks]
+    MPago[MercadoPago\nPagos + Webhooks]
     Email[Proveedor Email\nSendGrid / Resend / SES]
 
-    %% Relaciones
-    Guest -->|Usa navegador para ver regalos y aportar| WebApp
-    Couple -->|Configura boda, regalos y pagos| WebApp
+    %% Relaciones principales
+    Guest -->|Ve lista de bodas y regalos\nAporta públicamente| FE
+    Couple -->|Administra boda y catálogo| FE
+    FE -->|REST/JSON| API
 
-    WebApp -->|Datos de productos Amazon| Amazon
-    WebApp -->|Datos de productos ML| ML
-
-    WebApp -->|Crear pagos en MercadoPago| MPago
-    MPago -->|Webhooks de estado de pago| WebApp
-
-    WebApp -->|Envio de emails y notificaciones| Email
+    %% Integraciones backend
+    API -->|Crear preferencias de pago| MPago
+    MPago -->|Webhooks estado de pago| API
+    API -->|Emails transaccionales| Email
 ```

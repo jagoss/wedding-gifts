@@ -4,83 +4,61 @@
 flowchart LR
     %% Clientes
     subgraph Clients[Clientes]
-        Guest[Invitado\nWeb Browser]
-        Couple[Pareja / Admin\nWeb Browser]
+        Guest[Invitado\nBrowser]
+        Couple[Pareja / Admin\nBrowser]
     end
 
     %% Frontend
-    subgraph Frontend[Frontend - Next.js + TypeScript]
-        FEApp[App Web\nPublic pages + Admin panel]
+    subgraph Frontend[Frontend - Next.js]
+        FEApp[App Web\nPúblico + Panel Admin]
     end
 
-    %% Backend - Clean Architecture
-    subgraph Backend[Backend API - Clean Architecture]
+    %% Backend
+    subgraph Backend[Backend API - Express + Clean Architecture]
         subgraph Presentation[Capa de Presentación]
-            HTTPLayer[HTTP Controllers\nExpress.js]
+            HTTPLayer[HTTP Controllers\n+ Auth Middleware\n+ Error Handler]
         end
         
         subgraph Application[Capa de Aplicación]
-            UseCases[Use Cases\nOrquestación de negocio]
+            UseCases[Use Cases\nOrquestación]
         end
         
         subgraph Domain[Capa de Dominio]
-            Entities[Entities & Value Objects\nReglas de negocio]
-            Ports[Ports / Interfaces\nContratos]
+            Entities[Entities & Value Objects]
+            Ports[Ports / Interfaces\nRepos + Servicios]
         end
         
         subgraph Infrastructure[Capa de Infraestructura]
-            Repos[Repository Implementations]
-            ExtServices[External Service Adapters]
+            Repos[Repos InMemory]
+            Services[Servicios externos simulados Email, Payments, Hash, Tokens]
+        end
+        
+        subgraph Composition[Composition Root]
+            Container[DI Container]
+            AppFactory[createApp]
         end
     end
 
-    %% Infra
-    subgraph Infra[Infraestructura]
-        DB[(PostgreSQL)]
-        Cache[(Redis)]
-        Storage[(Object Storage\nS3 / R2)]
-        Mail[Email Provider]
-        Logs[(Logging / Metrics)]
-    end
-
     %% Externos
-    subgraph External[APIs externas]
-        AmazonAPI[Amazon Product\nAdvertising API]
-        MLAPI[MercadoLibre\nItems API]
-        MPago[MercadoPago\nCheckout + Webhooks]
+    subgraph External[Servicios Externos]
+        MPago[MercadoPago\nPreferencias + Webhooks]
+        Mail[Proveedor Email]
     end
 
-    %% Navegadores -> Frontend
+    %% Flujos
     Guest --> FEApp
     Couple --> FEApp
-
-    %% Frontend -> Backend
     FEApp -->|REST / JSON| HTTPLayer
-
-    %% Clean Architecture flow (outside-in)
     HTTPLayer --> UseCases
     UseCases --> Entities
     UseCases --> Ports
     Ports -.->|implements| Repos
-    Ports -.->|implements| ExtServices
+    Ports -.->|implements| Services
 
-    %% Infrastructure -> External
-    Repos --> DB
-    Repos --> Cache
-    ExtServices --> Mail
-    ExtServices --> MPago
-    ExtServices --> AmazonAPI
-    ExtServices --> MLAPI
+    Services --> MPago
+    Services --> Mail
 
-    %% Storage
-    FEApp --> Storage
-
-    %% Webhooks
     MPago -->|Webhooks| HTTPLayer
-
-    %% Logs
-    HTTPLayer --> Logs
-    UseCases --> Logs
 ```
 
 ## Principios de Clean Architecture
@@ -88,5 +66,5 @@ flowchart LR
 - **Dependency Rule**: Las dependencias apuntan hacia adentro (Infrastructure → Application → Domain)
 - **Domain Layer**: Contiene entidades, value objects y reglas de negocio puras
 - **Application Layer**: Contiene use cases que orquestan el flujo de la aplicación
-- **Infrastructure Layer**: Implementaciones concretas de repositorios y servicios externos
+- **Infrastructure Layer**: Implementaciones concretas de repositorios y servicios externos simulados
 - **Ports & Adapters**: Los use cases dependen de interfaces (ports), no de implementaciones concretas

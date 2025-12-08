@@ -15,10 +15,10 @@ classDiagram
             -_guestName: string
             -_guestEmail: Email
             -_type: ContributionType
-            -_amount: Money
+            -_amount: Money | null
             -_status: ContributionStatus
-            -_paymentProvider: PaymentProvider
-            -_paymentProviderId: string
+            -_paymentProvider: PaymentProvider | null
+            -_paymentProviderId: string | null
             -_createdAt: Date
             +create()$ Contribution
             +fromPersistence()$ Contribution
@@ -59,20 +59,22 @@ classDiagram
     namespace DomainPorts {
         class IContributionRepository {
             <<interface>>
-            +findById(id) Promise~Contribution~
+            +findById(id) Promise~Contribution?~
             +findByWeddingId(weddingId) Promise~Contribution[]~
-            +findByPaymentProviderId(id) Promise~Contribution~
+            +findByGiftId(giftId) Promise~Contribution[]~
+            +findByPaymentProviderId(id) Promise~Contribution?~
             +save(contribution) Promise~Contribution~
         }
 
         class IPaymentGateway {
             <<interface>>
             +createPreference(params) Promise~PaymentPreferenceResult~
-            +getPaymentDetails(paymentId) Promise~PaymentDetails~
+            +getPaymentDetails(paymentId) Promise~PaymentDetails?~
         }
 
         class IEmailService {
             <<interface>>
+            +sendWelcomeEmail(email, name) Promise~void~
             +sendContributionCreated(email, name, gift) Promise~void~
             +sendContributionPaid(email, name, amount) Promise~void~
         }
@@ -89,6 +91,11 @@ classDiagram
             -emailService: IEmailService
             -paymentGateway: IPaymentGateway
             +execute(input) Promise~CreateContributionResponse~
+        }
+
+        class GetWeddingContributionsUseCase {
+            -contributionRepository: IContributionRepository
+            +execute(weddingId) Promise~Contribution[]~
         }
 
         class CreatePaymentPreferenceUseCase {
@@ -110,15 +117,15 @@ classDiagram
             +guestName: string
             +guestEmail: string
             +type: ContributionType
-            +amount: number
-            +currency: string
+            +amount: number?
+            +currency: string?
             +paymentMethod: PaymentProvider
         }
 
         class CreateContributionResponse {
             +contributionId: string
             +status: ContributionStatus
-            +payment: PaymentInfo
+            +payment: PaymentInfo?
         }
     }
 
@@ -128,20 +135,22 @@ classDiagram
     namespace Infrastructure {
         class InMemoryContributionRepository {
             -contributions: Map
-            +findById(id) Promise~Contribution~
+            +findById(id) Promise~Contribution?~
             +findByWeddingId(weddingId) Promise~Contribution[]~
-            +findByPaymentProviderId(id) Promise~Contribution~
+            +findByGiftId(giftId) Promise~Contribution[]~
+            +findByPaymentProviderId(id) Promise~Contribution?~
             +save(contribution) Promise~Contribution~
         }
 
         class MockPaymentGateway {
             -payments: Map
             +createPreference(params) Promise~PaymentPreferenceResult~
-            +getPaymentDetails(paymentId) Promise~PaymentDetails~
+            +getPaymentDetails(paymentId) Promise~PaymentDetails?~
             +simulatePayment(id, status) void
         }
 
         class ConsoleEmailService {
+            +sendWelcomeEmail(email, name) Promise~void~
             +sendContributionCreated(email, name, gift) Promise~void~
             +sendContributionPaid(email, name, amount) Promise~void~
         }
@@ -181,6 +190,8 @@ classDiagram
     CreateContributionUseCase ..> CreateContributionInput : input
     CreateContributionUseCase ..> CreateContributionResponse : output
 
+    GetWeddingContributionsUseCase --> IContributionRepository
+
     CreatePaymentPreferenceUseCase --> IContributionRepository
     CreatePaymentPreferenceUseCase --> IPaymentGateway
 
@@ -195,6 +206,7 @@ classDiagram
 
     %% Controllers use Use Cases
     ContributionController --> CreateContributionUseCase
+    ContributionController --> GetWeddingContributionsUseCase
     PaymentController --> CreatePaymentPreferenceUseCase
     PaymentController --> HandlePaymentWebhookUseCase
 ```
@@ -231,13 +243,13 @@ sequenceDiagram
     
     UC->>Email: sendContributionCreated(...)
     
-    alt paymentMethod == MERCADOPAGO
+    alt paymentMethod == MERCADOPAGO and amount present
         UC->>PG: createPreference(params)
         PG-->>UC: {preferenceId, checkoutUrl}
     end
     
-    UC-->>Ctrl: CreateContributionResponse
-    Ctrl-->>Guest: 201 Created + payment info
+    UC-->>Ctrl: CreateContributionResponse (payment nullable)
+    Ctrl-->>Guest: 201 Created + payment info (si aplica)
 ```
 
 ## Flujo de webhook de pago
@@ -256,7 +268,7 @@ sequenceDiagram
     Ctrl->>UC: execute({type, data})
     
     UC->>PG: getPaymentDetails(paymentId)
-    PG-->>UC: PaymentDetails
+    PG-->>UC: PaymentDetails?
     
     UC->>CRepo: findById(externalReference)
     CRepo-->>UC: Contribution
@@ -265,7 +277,7 @@ sequenceDiagram
         UC->>Entity: contribution.markAsPaid(paymentId)
         Note over Entity: Updates internal state<br/>Enforces business rules
         UC->>CRepo: save(contribution)
-        UC->>Email: sendContributionPaid(...)
+        UC->>Email: sendContributionPaid(amount) if amount exists
     else status == rejected
         UC->>Entity: contribution.reject()
         UC->>CRepo: save(contribution)

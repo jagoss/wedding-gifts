@@ -126,6 +126,12 @@ export class MockContributionRepository implements IContributionRepository {
     );
   }
 
+  async findByGiftId(giftId: UniqueId): Promise<Contribution[]> {
+    return Array.from(this.contributions.values()).filter(
+      (contribution) => contribution.giftId.equals(giftId)
+    );
+  }
+
   async findByPaymentProviderId(providerId: string): Promise<Contribution | null> {
     return Array.from(this.contributions.values()).find(
       (contribution) => contribution.paymentProviderId === providerId
@@ -195,6 +201,14 @@ export class MockEmailService implements IEmailService {
     });
   }
 
+  async sendWelcomeEmail(email: string, name: string): Promise<void> {
+    this.sentEmails.push({
+      to: email,
+      type: 'welcome',
+      data: { name },
+    });
+  }
+
   // Helper for tests
   clear(): void {
     this.sentEmails = [];
@@ -202,7 +216,16 @@ export class MockEmailService implements IEmailService {
 }
 
 export class MockPaymentGateway implements IPaymentGateway {
-  private payments: Map<string, any> = new Map();
+  private payments: Map<
+    string,
+    {
+      contributionId: string;
+      weddingId: string;
+      amount: number;
+      currency: string;
+      status: 'approved' | 'pending' | 'rejected';
+    }
+  > = new Map();
   private preferenceCounter = 1;
 
   async createPreference(params: {
@@ -226,23 +249,21 @@ export class MockPaymentGateway implements IPaymentGateway {
     };
   }
 
-  async getPaymentDetails(paymentId: string): Promise<{
-    id: string;
-    status: string;
-    externalReference: string;
-  } | null> {
+  async getPaymentDetails(paymentId: string) {
     const payment = this.payments.get(paymentId);
     if (!payment) return null;
 
     return {
-      id: paymentId,
+      paymentId,
       status: payment.status,
       externalReference: payment.contributionId,
+      amount: payment.amount,
+      currency: payment.currency,
     };
   }
 
   // Helper for tests
-  setPaymentStatus(paymentId: string, status: string): void {
+  setPaymentStatus(paymentId: string, status: 'approved' | 'pending' | 'rejected'): void {
     const payment = this.payments.get(paymentId);
     if (payment) {
       payment.status = status;

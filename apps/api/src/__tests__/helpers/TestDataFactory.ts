@@ -1,7 +1,7 @@
 import { User } from '../../domain/entities/User';
 import { Wedding } from '../../domain/entities/Wedding';
 import { Gift, GiftType, GiftStatus } from '../../domain/entities/Gift';
-import { Contribution, ContributionType, PaymentProvider } from '../../domain/entities/Contribution';
+import { Contribution, ContributionType, ContributionStatus, PaymentProvider } from '../../domain/entities/Contribution';
 import { UniqueId, Email, Slug, Money } from '../../domain/value-objects';
 
 /**
@@ -33,7 +33,6 @@ export class TestDataFactory {
       name: data.name,
       email: data.email,
       passwordHash: data.passwordHash,
-      createdAt: new Date().toISOString(),
     });
   }
 
@@ -75,7 +74,6 @@ export class TestDataFactory {
       message: data.message,
       heroImageUrl: data.heroImageUrl,
       bankAccounts: data.bankAccounts,
-      createdAt: new Date().toISOString(),
     });
   }
 
@@ -123,7 +121,6 @@ export class TestDataFactory {
       type: data.type,
       status: data.status,
       maxContributions: data.maxContributions,
-      createdAt: new Date().toISOString(),
     });
   }
 
@@ -164,7 +161,7 @@ export class TestDataFactory {
       type: data.type,
       amount: data.amount,
       currency: data.currency,
-      status: 'PENDING',
+      status: ContributionStatus.PENDING,
       paymentProvider: data.paymentProvider,
       paymentProviderId: null,
       createdAt: new Date().toISOString(),

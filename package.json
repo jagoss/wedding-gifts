@@ -1,0 +1,36 @@
+{
+  "name": "wedding-registry",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Wedding Registry monorepo - API and Web application",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=@wedding-registry/api",
+    "dev:web": "npm run dev --workspace=@wedding-registry/web",
+    "build:api": "npm run build --workspace=@wedding-registry/api",
+    "build:web": "npm run build --workspace=@wedding-registry/web",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "wedding",
+    "registry",
+    "gifts",
+    "monorepo"
+  ],
+  "license": "MIT",
+  "overrides": {
+    "eslint-config-next": {
+      "@next/eslint-plugin-next": {
+        "glob": "10.5.0"
+      }
+    }
+  }
+}

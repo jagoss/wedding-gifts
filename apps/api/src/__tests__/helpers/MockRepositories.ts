@@ -64,6 +64,12 @@ export class MockWeddingRepository implements IWeddingRepository {
     );
   }
 
+  async existsBySlug(slug: Slug): Promise<boolean> {
+    return Array.from(this.weddings.values()).some(
+      (wedding) => wedding.slug.equals(slug)
+    );
+  }
+
   async save(wedding: Wedding): Promise<Wedding> {
     this.weddings.set(wedding.id.value, wedding);
     return wedding;

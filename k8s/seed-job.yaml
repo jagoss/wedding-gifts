@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-demo
+  namespace: wedding-gifts
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: seed-demo
+          image: wedding-registry-api:local
+          imagePullPolicy: Never
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-user
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-password
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: mysql-config
+                  key: mysql-database
+            - name: DB_LOGGING
+              value: "false"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Starting database seed..."
+              node /app/apps/api/dist/scripts/seedDemo.js
+              echo "Seed completed successfully"
+

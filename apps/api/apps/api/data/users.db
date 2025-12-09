@@ -1,0 +1,2 @@
+{"id":"79daf219-180b-4d3e-9fa5-3c387ce54947","name":"Demo Admin","email":"demo.admin@example.com","passwordHash":"hashed_demo1234","_id":"NQCGbtCvYCXLjAz1"}
+{"$$indexCreated":{"fieldName":"email","unique":true,"sparse":false}}

@@ -1,0 +1,4 @@
+{"$$indexCreated":{"fieldName":"weddingId","unique":false,"sparse":false}}
+{"$$indexCreated":{"fieldName":"giftId","unique":false,"sparse":false}}
+{"$$indexCreated":{"fieldName":"paymentProviderId","unique":false,"sparse":false}}
+{"id":"594356ba-7034-45be-aee5-aaf14e596705","weddingId":"bce500ab-ffab-471d-aa9f-d12b803da7e5","giftId":"1f7ddc0a-19e4-4b9f-818d-4f59b2846b46","guestName":"Invitado Demo","guestEmail":"guest@example.com","type":"CONTRIBUTION","amount":50,"currency":"USD","status":"PAID","paymentProvider":"MERCADOPAGO","paymentProviderId":"e3724a37-e157-4702-9bcc-9893d89d7ca8","createdAt":"2025-12-08T20:38:59.497Z","_id":"dGvV8ShKp0yCtCOe"}

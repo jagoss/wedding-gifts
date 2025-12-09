@@ -14,7 +14,10 @@
     "build:web": "npm run build --workspace=@wedding-registry/web",
     "build": "npm run build --workspaces",
     "lint": "npm run lint --workspaces",
-    "test": "npm run test --workspaces"
+    "test": "npm run test --workspaces",
+    "k8s:deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy-minikube.ps1",
+    "k8s:start": "pwsh -ExecutionPolicy Bypass -File ./start-services.ps1",
+    "k8s:cleanup": "pwsh -ExecutionPolicy Bypass -File ./cleanup-minikube.ps1 -DeleteNamespace"
   },
   "engines": {
     "node": ">=18.0.0"

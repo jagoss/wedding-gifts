@@ -6,11 +6,15 @@
  * depend on abstractions (interfaces), not concrete implementations.
  */
 
-// Infrastructure - Repositories
-import { InMemoryUserRepository } from '../infrastructure/persistence/InMemoryUserRepository';
-import { InMemoryWeddingRepository } from '../infrastructure/persistence/InMemoryWeddingRepository';
-import { InMemoryGiftRepository } from '../infrastructure/persistence/InMemoryGiftRepository';
-import { InMemoryContributionRepository } from '../infrastructure/persistence/InMemoryContributionRepository';
+// Infrastructure - Repositories (Sequelize)
+import {
+  SequelizeUserRepository,
+  SequelizeWeddingRepository,
+  SequelizeGiftRepository,
+  SequelizeContributionRepository,
+} from '../infrastructure/persistence';
+import { connectSequelize } from '../infrastructure/db/sequelize';
+import '../infrastructure/db/models'; // init models and associations
 
 // Infrastructure - Services
 import { ConsoleEmailService } from '../infrastructure/services/ConsoleEmailService';
@@ -77,11 +81,15 @@ export function createContainer(): Container {
   // Infrastructure Layer - Concrete Implementations
   // ============================================
 
-  // Repositories (in-memory for now, can be swapped for DB implementations)
-  const userRepository = new InMemoryUserRepository();
-  const weddingRepository = new InMemoryWeddingRepository();
-  const giftRepository = new InMemoryGiftRepository();
-  const contributionRepository = new InMemoryContributionRepository();
+  connectSequelize().catch((err) => {
+    console.error('Failed to connect to DB', err);
+    throw err;
+  });
+
+  const userRepository = new SequelizeUserRepository();
+  const weddingRepository = new SequelizeWeddingRepository();
+  const giftRepository = new SequelizeGiftRepository();
+  const contributionRepository = new SequelizeContributionRepository();
 
   // External Services (mock implementations for development)
   const emailService = new ConsoleEmailService();

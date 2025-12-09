@@ -55,6 +55,45 @@ wedding-gifts/
 
 ## Getting Started
 
+### Option 1: Kubernetes/Minikube Deployment (Recommended)
+
+Deploy the complete stack (MySQL + API + Web) to Minikube with a single command:
+
+```powershell
+.\deploy-minikube.ps1
+```
+
+This will automatically:
+
+- 🚀 Start Minikube
+- 🐳 Build Docker images
+- ☸️  Deploy all services
+- 🌱 Seed demo data
+- 🌐 Start port-forwarding for easy access
+
+**Access your services**:
+
+- API: `http://localhost:8080`
+- Web: `http://localhost:3000`
+
+**Restart port-forwarding** (if closed):
+
+```powershell
+.\start-services.ps1
+# Or using npm:
+npm run k8s:start
+```
+
+**Quick cleanup**:
+
+```powershell
+.\cleanup-minikube.ps1 -DeleteNamespace
+```
+
+📖 **Full documentation**: See [MINIKUBE-DEPLOYMENT.md](MINIKUBE-DEPLOYMENT.md)
+
+### Option 2: Local Development
+
 ```bash
 # Install dependencies
 npm install
@@ -66,6 +105,59 @@ npm run dev
 # Run tests
 npm test
 ```
+
+### Local data storage (SQLite/NeDB files)
+
+- La API usa almacenamiento basado en archivos (NeDB) por defecto.
+- Configura la ruta con `DB_FILE` (o `DATABASE_FILE`/`DATABASE_URL`). Ejemplo en Linux/Mac:
+
+```bash
+export DB_FILE=./apps/api/data
+```
+
+En Windows (PowerShell):
+
+```powershell
+$env:DB_FILE="./apps/api/data"
+```
+
+Si no se define, usa `apps/api/data` dentro del repo.
+
+> Nota: `better-sqlite3` está en `optionalDependencies`. En Windows con Node 24 puede fallar la compilación (C++20 requerido). Si falla, el runtime continúa con NeDB; no es obligatorio para la demo.
+
+### MySQL + Sequelize (nuevo)
+
+- Variables en `apps/api`:
+  - `DB_HOST` (ej. 127.0.0.1)
+  - `DB_PORT` (ej. 3306)
+  - `DB_USER`, `DB_PASS`
+  - `DB_NAME` (ej. `wedding_gifts`)
+  - `DB_LOGGING` (true/false)
+- Migraciones y seed (requiere MySQL en marcha):
+
+```bash
+cd apps/api
+npm run db:migrate
+npm run db:seed
+```
+
+Para demo manual sin CLI: `npm run seed:demo --workspace @wedding-registry/api` también usa Sequelize (requiere DB disponible).
+
+### Semilla de demo (`demo-wedding`)
+
+Ejecuta el seed para crear usuario admin, la boda `demo-wedding` y regalos de prueba:
+
+```bash
+npm run seed:demo --workspace @wedding-registry/api
+```
+
+Variables opcionales para el seed:
+
+- `SEED_ADMIN_EMAIL` (default: demo.admin@example.com)
+- `SEED_ADMIN_PASSWORD` (default: demo1234)
+- `SEED_ADMIN_NAME` (default: Demo Admin)
+
+Después del seed, el endpoint público `/public/weddings/demo-wedding` debería devolver datos para que el frontend de demo funcione.
 
 ## Testing the API
 

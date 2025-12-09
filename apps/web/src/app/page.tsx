@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Route } from "next";
 import NextLink from "next/link";
 import { Box, Button, Container, Grid, GridItem, Heading, Input, Stack, Text } from "@chakra-ui/react";
 import { NavBar } from "@/ui/components/NavBar";
@@ -9,6 +10,7 @@ import { Hero } from "@/ui/components/Hero";
 export default function HomePage() {
   const [slug, setSlug] = useState("");
   const targetSlug = slug || "demo-wedding";
+  const weddingHref = (`/weddings/${targetSlug}` as Route);
 
   return (
     <>
@@ -27,11 +29,7 @@ export default function HomePage() {
               onChange={(e) => setSlug(e.target.value)}
               bg="gray.50"
             />
-            <Button
-              as={NextLink}
-              href={{ pathname: "/weddings/[slug]", query: { slug: targetSlug } }}
-              colorScheme="purple"
-            >
+            <Button as={NextLink} href={weddingHref} colorScheme="purple">
               Abrir
             </Button>
           </Stack>

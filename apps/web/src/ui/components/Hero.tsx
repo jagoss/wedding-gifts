@@ -2,6 +2,7 @@
 
 import { Box, Button, Flex, Heading, Stack, Text } from "@chakra-ui/react";
 import NextLink from "next/link";
+import type { Route } from "next";
 
 export function Hero() {
   return (
@@ -25,12 +26,7 @@ export function Hero() {
           <Button as={NextLink} href="/dashboard" colorScheme="white" variant="outline" size="lg">
             Ir al panel
           </Button>
-          <Button
-            as={NextLink}
-            href={{ pathname: "/weddings/[slug]", query: { slug: "demo-wedding" } }}
-            colorScheme="blackAlpha"
-            size="lg"
-          >
+          <Button as={NextLink} href={"/weddings/demo-wedding" as Route} colorScheme="blackAlpha" size="lg">
             Ver demo pública
           </Button>
         </Stack>

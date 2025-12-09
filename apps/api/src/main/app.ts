@@ -28,6 +28,11 @@ export function createApp() {
   // Routes
   // ============================================
 
+  // Health Check (for Kubernetes)
+  app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // Auth Routes (public)
   app.post('/auth/register', container.authController.register);
   app.post('/auth/login', container.authController.login);
